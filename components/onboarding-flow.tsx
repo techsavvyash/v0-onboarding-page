@@ -59,8 +59,7 @@ export default function OnboardingFlow() {
     setIsLoading(true)
 
     try {
-      // Call backend API
-      const response = await fetch("http://localhost:3001/api/company/insights", {
+      const response = await fetch("/api/onboarding", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
