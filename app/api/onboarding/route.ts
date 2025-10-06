@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, domain }),
+        body: JSON.stringify({ email }),
       })
 
       if (!response.ok) {
