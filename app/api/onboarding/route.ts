@@ -33,102 +33,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data)
     } catch (fetchError) {
       console.error("Backend API fetch error:", fetchError)
-
-      // Remove this fallback once your backend is reliably running
-      const mockData = {
-        companyName: domain.split(".")[0].charAt(0).toUpperCase() + domain.split(".")[0].slice(1),
-        domain,
-        industry: "Technology",
-        valuation: "$100M",
-        revenue: "$10M ARR",
-        insights: {
-          products: {
-            value: "The company offers innovative SaaS solutions focused on improving business productivity.",
-            citations: [
-              {
-                title: "Company Overview",
-                url: "https://example.com",
-                excerpt: "Leading provider of productivity tools",
-              },
-            ],
-          },
-          targetAudience: {
-            value: "Small to medium-sized businesses looking to streamline operations.",
-            citations: [
-              {
-                title: "Market Analysis",
-                url: "https://example.com",
-                excerpt: "Targeting SMB segment with 50-500 employees",
-              },
-            ],
-          },
-          markets: {
-            value: "Primarily North America and Europe, with expansion into Asia-Pacific.",
-            citations: [
-              {
-                title: "Geographic Presence",
-                url: "https://example.com",
-                excerpt: "Strong presence in US and EU markets",
-              },
-            ],
-          },
-          growthRate: {
-            value: "Growing at 150% year-over-year with strong customer retention.",
-            citations: [
-              {
-                title: "Growth Metrics",
-                url: "https://example.com",
-                excerpt: "Sustained triple-digit growth",
-              },
-            ],
-          },
-          recentDevelopments: {
-            value: [
-              {
-                type: "Product Launch",
-                description: "Launched new AI-powered analytics dashboard",
-                date: "2024-01-15",
-                impact: "Expected to increase user engagement by 40%",
-                citations: [
-                  {
-                    title: "Product Announcement",
-                    url: "https://example.com",
-                    excerpt: "Revolutionary AI features",
-                  },
-                ],
-              },
-              {
-                type: "Funding",
-                description: "Raised $50M Series B funding",
-                date: "2023-11-20",
-                impact: "Enables expansion into new markets and product development",
-                citations: [
-                  {
-                    title: "Funding News",
-                    url: "https://example.com",
-                    excerpt: "Significant investment round",
-                  },
-                ],
-              },
-              {
-                type: "Partnership",
-                description: "Strategic partnership with major enterprise software provider",
-                date: "2023-09-10",
-                impact: "Access to enterprise customer base",
-                citations: [
-                  {
-                    title: "Partnership Announcement",
-                    url: "https://example.com",
-                    excerpt: "Collaboration with industry leader",
-                  },
-                ],
-              },
-            ],
-          },
-        },
-      }
-
-      return NextResponse.json(mockData)
+      return NextResponse.json(
+        { message: "Unable to connect to backend service. Please try again later." },
+        { status: 503 },
+      )
     }
   } catch (error) {
     console.error("Onboarding API error:", error)
