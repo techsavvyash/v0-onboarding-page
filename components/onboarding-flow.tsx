@@ -6,23 +6,51 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, Building2, Target, TrendingUp, Users } from "lucide-react"
+import { Loader2, Building2, AlertCircle } from "lucide-react"
 
-interface CompanyData {
+// Backend API types
+interface Citation {
+  title: string
+  url: string
+  excerpt: string
+}
+
+interface InsightWithCitation {
+  value: string
+  citations: Citation[]
+}
+
+interface RecentDevelopment {
+  type: string
+  description: string
+  date: string
+  impact: string
+  citations: Citation[]
+}
+
+interface Insights {
+  products: InsightWithCitation
+  targetAudience: InsightWithCitation
+  markets: InsightWithCitation
+  growthRate: InsightWithCitation
+  recentDevelopments: {
+    value: RecentDevelopment[]
+  }
+}
+
+interface CompanyInsight {
   companyName: string
+  domain: string
   industry: string
-  size: string
-  priorities: Array<{
-    title: string
-    description: string
-    impact: string
-  }>
+  valuation: string
+  revenue: string
+  insights: Insights
 }
 
 export default function OnboardingFlow() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [companyData, setCompanyData] = useState<CompanyData | null>(null)
+  const [companyData, setCompanyData] = useState<CompanyInsight | null>(null)
   const [error, setError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,95 +58,207 @@ export default function OnboardingFlow() {
     setError("")
     setIsLoading(true)
 
-    // Extract domain from email
-    const domain = email.split("@")[1]
-
-    if (!domain) {
-      setError("Please enter a valid email address")
-      setIsLoading(false)
-      return
-    }
-
     try {
-      // Call your backend API
-      const response = await fetch("/api/onboarding", {
+      // Call backend API
+      const response = await fetch("http://localhost:3001/api/company/insights", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, domain }),
+        body: JSON.stringify({ email }),
       })
 
       if (!response.ok) {
-        throw new Error("Failed to fetch company data")
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to fetch company data")
       }
 
-      const data = await response.json()
+      const data: CompanyInsight = await response.json()
       setCompanyData(data)
     } catch (err) {
-      setError("Unable to fetch company information. Please try again.")
+      setError(err instanceof Error ? err.message : "Unable to fetch company information. Please try again.")
       console.error(err)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const getPriorityIcon = (index: number) => {
-    const icons = [Target, TrendingUp, Users]
-    const Icon = icons[index] || Target
-    return <Icon className="h-5 w-5" />
-  }
-
   if (companyData) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-5xl">
+      <div className="container mx-auto px-4 py-12 max-w-7xl">
+        {/* Header */}
         <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="inline-flex items-center gap-2 mb-4 text-muted-foreground">
             <Building2 className="h-5 w-5" />
             <span className="text-sm font-medium">{companyData.companyName}</span>
+            <span className="text-sm text-muted-foreground/60">•</span>
+            <span className="text-sm">{companyData.industry}</span>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight mb-4 text-balance">Welcome to your personalized insights</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
-            Based on {companyData.companyName}'s profile in the {companyData.industry} industry, here are your top
-            priorities to focus on right now.
+          <h1 className="text-4xl font-bold tracking-tight mb-4 text-balance">
+            Company Insights: {companyData.companyName}
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty mb-4">
+            Valuation: {companyData.valuation} • Revenue: {companyData.revenue}
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
-          {companyData.priorities.map((priority, index) => (
-            <Card
-              key={index}
-              className="animate-in fade-in slide-in-from-bottom-4 duration-700 hover:shadow-lg transition-shadow"
-              style={{ animationDelay: `${index * 150}ms` }}
-            >
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">{getPriorityIcon(index)}</div>
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Priority {index + 1}
-                  </span>
-                </div>
-                <CardTitle className="text-xl text-balance">{priority.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base leading-relaxed mb-4 text-pretty">
-                  {priority.description}
-                </CardDescription>
-                <div className="pt-4 border-t border-border">
-                  <p className="text-sm font-medium text-foreground">Expected Impact</p>
-                  <p className="text-sm text-muted-foreground mt-1">{priority.impact}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Insights Cards */}
+        <div className="space-y-6 mb-8">
+          {/* Products */}
+          <Card className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <CardHeader>
+              <CardTitle>Products</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm mb-4">{companyData.insights.products.value}</p>
+              <div className="border-t border-border pt-4">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">CITATIONS</p>
+                {companyData.insights.products.citations.map((citation, idx) => (
+                  <div key={idx} className="mb-3 last:mb-0">
+                    <a
+                      href={citation.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      {citation.title} ↗
+                    </a>
+                    <p className="text-xs text-muted-foreground italic">"{citation.excerpt}"</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Target Audience */}
+          <Card className="animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: "100ms" }}>
+            <CardHeader>
+              <CardTitle>Target Audience</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm mb-4">{companyData.insights.targetAudience.value}</p>
+              <div className="border-t border-border pt-4">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">CITATIONS</p>
+                {companyData.insights.targetAudience.citations.map((citation, idx) => (
+                  <div key={idx} className="mb-3 last:mb-0">
+                    <a
+                      href={citation.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      {citation.title} ↗
+                    </a>
+                    <p className="text-xs text-muted-foreground italic">"{citation.excerpt}"</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Markets */}
+          <Card className="animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: "200ms" }}>
+            <CardHeader>
+              <CardTitle>Markets</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm mb-4">{companyData.insights.markets.value}</p>
+              <div className="border-t border-border pt-4">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">CITATIONS</p>
+                {companyData.insights.markets.citations.map((citation, idx) => (
+                  <div key={idx} className="mb-3 last:mb-0">
+                    <a
+                      href={citation.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      {citation.title} ↗
+                    </a>
+                    <p className="text-xs text-muted-foreground italic">"{citation.excerpt}"</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Growth Rate */}
+          <Card className="animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: "300ms" }}>
+            <CardHeader>
+              <CardTitle>Growth Rate</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm mb-4">{companyData.insights.growthRate.value}</p>
+              <div className="border-t border-border pt-4">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">CITATIONS</p>
+                {companyData.insights.growthRate.citations.map((citation, idx) => (
+                  <div key={idx} className="mb-3 last:mb-0">
+                    <a
+                      href={citation.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      {citation.title} ↗
+                    </a>
+                    <p className="text-xs text-muted-foreground italic">"{citation.excerpt}"</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent Developments */}
+          <Card className="animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: "400ms" }}>
+            <CardHeader>
+              <CardTitle>Recent Developments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {companyData.insights.recentDevelopments.value.map((dev, idx) => (
+                  <div key={idx} className="pb-6 border-b border-border last:border-0 last:pb-0">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="px-2 py-1 rounded bg-primary/10 text-primary text-xs font-semibold">
+                        {dev.type}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium mb-1">{dev.description}</p>
+                        <p className="text-xs text-muted-foreground mb-2">{dev.date}</p>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          <span className="font-medium">Impact:</span> {dev.impact}
+                        </p>
+                        <div className="mt-3 pt-3 border-t border-border/50">
+                          <p className="text-xs font-semibold text-muted-foreground mb-2">CITATIONS</p>
+                          {dev.citations.map((citation, citIdx) => (
+                            <div key={citIdx} className="mb-2 last:mb-0">
+                              <a
+                                href={citation.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs font-medium text-primary hover:underline"
+                              >
+                                {citation.title} ↗
+                              </a>
+                              <p className="text-xs text-muted-foreground italic">"{citation.excerpt}"</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
+        {/* CTA */}
         <div
           className="text-center animate-in fade-in slide-in-from-bottom-4 duration-700"
           style={{ animationDelay: "450ms" }}
         >
-          <Button size="lg" className="px-8">
-            Get Started
+          <Button size="lg" className="px-8" onClick={() => setCompanyData(null)}>
+            Analyze Another Company
           </Button>
         </div>
       </div>
@@ -150,7 +290,7 @@ export default function OnboardingFlow() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@company.com"
+                placeholder="you@liquiddeath.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -159,7 +299,12 @@ export default function OnboardingFlow() {
               />
             </div>
 
-            {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
+            {error && (
+              <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
 
             <Button type="submit" className="w-full h-12" disabled={isLoading}>
               {isLoading ? (
