@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Invalid email format" }, { status: 400 })
     }
 
-    const backendUrl = process.env.BACKEND_API_URL || "http://localhost:3001"
+    const backendUrl = process.env.BACKEND_API_URL || "https://crawl-central-production.up.railway.app"
 
     try {
       const response = await fetch(`${backendUrl}/api/company/insights`, {
